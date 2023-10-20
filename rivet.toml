@@ -1,0 +1,34 @@
+[cdn]
+    build_command = "yarn run build:prod"
+    build_output = "dist"
+
+[matchmaker]
+	max_players = 128
+	tier = "basic-1d8"
+	idle_lobbies = { min = 0, max = 0 }
+
+[matchmaker.regions]
+	lnd-atl = {}
+	lnd-fra = {}
+
+[matchmaker.game_modes]
+    [matchmaker.game_modes.default]
+
+    [matchmaker.game_modes.custom]
+        idle_lobbies = { min = 0, max = 0 }
+
+        [matchmaker.game_modes.custom.create_config]
+            identity_requirement = "none"
+
+            # Public custom lobbies will be listed in the response to `lobbies.list`, private custom
+            # lobbies will not
+            enable_public = true
+            enable_private = true
+
+[matchmaker.docker]
+	dockerfile = "Dockerfile"
+	
+	[matchmaker.docker.ports]
+		default = { port = 8080, protocol = "https" }
+
+[kv]
