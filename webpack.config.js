@@ -4,6 +4,8 @@ const Dotenv = require('dotenv-webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const webpack = require('webpack');
 
+require('dotenv').config();
+
 const distPath = path.join(__dirname, 'dist');
 
 let examples = ['index', 'matchmaker', 'native'];
@@ -52,7 +54,7 @@ module.exports = {
 			? [new Dotenv({ path: '.env.prod' })]
 			: [new Dotenv({ path: '.env' }), new Dotenv({ path: '.env.dev' })]),
 		new webpack.EnvironmentPlugin({
-			'RIVET_API_ENDPOINT': 'https://api.rivet.gg',
+			RIVET_API_ENDPOINT: 'https://api.rivet.gg'
 		}),
 		new MiniCssExtractPlugin(),
 		...examples.map(name => {
