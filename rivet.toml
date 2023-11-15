@@ -17,13 +17,8 @@
     [matchmaker.game_modes.custom]
         idle_lobbies = { min = 0, max = 0 }
 
-        [matchmaker.game_modes.custom.create_config]
-            identity_requirement = "none"
-
-            # Public custom lobbies will be listed in the response to `lobbies.list`, private custom
-            # lobbies will not
-            enable_public = true
-            enable_private = true
+        [matchmaker.game_modes.custom.actions]
+            create = { enabled = true }
 
 [matchmaker.docker]
 	dockerfile = "Dockerfile"
