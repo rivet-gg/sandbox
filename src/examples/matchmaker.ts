@@ -12,7 +12,7 @@ console.log('Rivet token', RIVET_TOKEN);
 
 const RIVET = new RivetClient({
 	token: process.env.RIVET_TOKEN,
-    environment: process.env.RIVET_API_ENDPOINT,
+	environment: process.env.RIVET_API_ENDPOINT
 });
 
 // Add window "onload" handler
@@ -30,6 +30,12 @@ export default class MyApp extends LitElement {
 	static styles = unsafeCSS(styles);
 
 	// === UI ===
+	@query('#max-players')
+	maxPlayersInput: HTMLInputElement;
+
+	@query('#lobby-tags')
+	lobbyTags: HTMLTextAreaElement;
+
 	@query('#custom-lobby-config')
 	customLobbyConfig: HTMLTextAreaElement;
 
@@ -53,7 +59,7 @@ export default class MyApp extends LitElement {
 	findDuration: string = '';
 
 	@property({ type: Object })
-    forwardedFor: string = null;
+	forwardedFor: string = null;
 
 	@property({ type: Object })
 	stateLobbyConfig: any = null;
@@ -115,8 +121,7 @@ export default class MyApp extends LitElement {
 			this.regions = res.regions.map(region => region.regionId);
 		} catch (err) {
 			this.loadError = err;
-			if (err.hasOwnProperty('$response'))
-				this.loadError = formatCode(JSON.parse(await err.$response.body.text()));
+			if (err.hasOwnProperty('body')) this.loadError = formatCode(err.body);
 			return;
 		}
 
@@ -134,12 +139,13 @@ export default class MyApp extends LitElement {
 			res = await RIVET.matchmaker.lobbies.find({
 				gameModes: [...this.selectedGameModes],
 				regions: this.selectedRegions.size ? Array.from(this.selectedRegions.values()) : null,
+				tags: this.lobbyTags.value ? JSON.parse(this.lobbyTags.value) : null,
+				maxPlayers: this.maxPlayersInput.value ? parseInt(this.maxPlayersInput.value) : null,
 				preventAutoCreateLobby: false
 			});
 		} catch (err) {
 			this.loadError = err;
-			if (err.hasOwnProperty('$response'))
-				this.loadError = formatCode(JSON.parse(await err.$response.body.text()));
+			if (err.hasOwnProperty('body')) this.loadError = formatCode(err.body);
 			return;
 		}
 
@@ -159,13 +165,14 @@ export default class MyApp extends LitElement {
 			res = await RIVET.matchmaker.lobbies.create({
 				gameMode: this.selectedGameModes.values().next().value,
 				region: this.selectedRegions.size ? this.selectedRegions.values().next().value : null,
+				tags: this.lobbyTags.value ? JSON.parse(this.lobbyTags.value) : null,
+				maxPlayers: this.maxPlayersInput.value ? parseInt(this.maxPlayersInput.value) : null,
 				publicity: this.isPublic ? 'public' : 'private',
 				lobbyConfig: this.customLobbyConfig.value ? JSON.parse(this.customLobbyConfig.value) : null
 			});
 		} catch (err) {
 			this.loadError = err;
-			if (err.hasOwnProperty('$response'))
-				this.loadError = formatCode(JSON.parse(await err.$response.body.text()));
+			if (err.hasOwnProperty('body')) this.loadError = formatCode(err.body);
 			return;
 		}
 
@@ -202,9 +209,9 @@ export default class MyApp extends LitElement {
 		this.socket.addEventListener('message', rawData => {
 			let [event, data] = JSON.parse(rawData.data as string);
 			switch (event) {
-                case 'init':
-                    this.forwardedFor = data.forwardedFor;
-                    break;
+				case 'init':
+					this.forwardedFor = data.forwardedFor;
+					break;
 				case 'state':
 					this.stateLobbyConfig = data.lobbyConfig;
 
@@ -313,10 +320,6 @@ export default class MyApp extends LitElement {
 		}
 
 		if (this.allowRegionSelection) {
-			let defaultLobbyConfig = {
-				scoreIncr: 2
-			};
-
 			return html`<div id="base">
 				${this.loadedRegions
 					? html`<div id="center">
@@ -326,22 +329,11 @@ export default class MyApp extends LitElement {
 							<h3>Select a game mode</h3>
 							${this.renderGameModeSelections()}
 
-							<h3>Custom</h3>
-							<div class="config-details">
-								<input
-									type="checkbox"
-									name="is-public"
-									.checked=${this.isPublic}
-									@change=${(event: InputEvent) =>
-										(this.isPublic = (event.target as HTMLInputElement).checked)}
-								/>
-								<label for="is-public">Is Public</label>
+							<h3>Config</h3>
+							${this.renderConfig()}
 
-								<div style="margin-top: 4px; font-weight: bold">Lobby Config</div>
-								<textarea id="custom-lobby-config" name="lobby-config" rows="10" cols="50">
-${JSON.stringify(defaultLobbyConfig)}</textarea
-								>
-							</div>
+							<h3>Custom</h3>
+							${this.renderCustomConfig()}
 
 							<div id="actions">
 								<button @click=${this.findLobby.bind(this)} .disabled=${!this.loadedRegions}>
@@ -490,6 +482,49 @@ ${JSON.stringify(defaultLobbyConfig)}</textarea
 						<label for=${gm}>${gm}</label>
 					</div>`
 			)}
+		</div>`;
+	}
+
+	renderConfig() {
+		let defaultTags = {
+			worldId: '06320'
+		};
+		let defaultMaxPLayerCount = 128;
+
+		return html`<div class="config-details">
+			<div style="margin-top: 4px; font-weight: bold">Max Player Count</div>
+			<input
+				id="max-players"
+				type="text"
+				name="max-player-count"
+				placeholder="Max player count"
+				value=${defaultMaxPLayerCount}
+			/>
+			<div style="margin-top: 4px; font-weight: bold">Lobby Tags</div>
+			<textarea id="lobby-tags" name="lobby-tags" rows="10" cols="50">
+${JSON.stringify(defaultTags)}</textarea
+			>
+		</div>`;
+	}
+
+	renderCustomConfig() {
+		let defaultLobbyConfig = {
+			scoreIncr: 2
+		};
+
+		return html`<div class="config-details">
+			<input
+				type="checkbox"
+				name="is-public"
+				.checked=${this.isPublic}
+				@change=${(event: InputEvent) => (this.isPublic = (event.target as HTMLInputElement).checked)}
+			/>
+			<label for="is-public">Is Public</label>
+
+			<div style="margin-top: 4px; font-weight: bold">Lobby Config</div>
+			<textarea id="custom-lobby-config" name="lobby-config" rows="10" cols="50">
+	${JSON.stringify(defaultLobbyConfig)}</textarea
+			>
 		</div>`;
 	}
 

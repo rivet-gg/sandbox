@@ -12,7 +12,7 @@ logTimestamp('start');
 
 const RIVET = new RivetClient({
 	token: process.env.RIVET_TOKEN,
-	environment: process.env.RIVET_API_ENDPOINT,
+	environment: process.env.RIVET_API_ENDPOINT
 });
 
 retryDns(() => RIVET.matchmaker.lobbies.ready())
@@ -66,9 +66,14 @@ wss.on('connection', async (ws, req) => {
 
 	logTimestamp(`player-connect-${idx}`);
 
-    ws.send(JSON.stringify(['init', {
-        forwardedFor: req.headers['x-forwarded-for'],
-    }]));
+	ws.send(
+		JSON.stringify([
+			'init',
+			{
+				forwardedFor: req.headers['x-forwarded-for']
+			}
+		])
+	);
 
 	let url = new URL(req.url!, 'http://test.com');
 	let playerToken = url.searchParams.get('token') as string;

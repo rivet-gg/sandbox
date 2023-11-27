@@ -14,20 +14,3 @@ export function formatCode<T extends Object>(res: T) {
 
 	return html`<code class="theme1">${unsafeHTML(highlightedCode)}</code>`;
 }
-
-export async function createErr(err: any) {
-	let status: number;
-	let body: any;
-	if (err.hasOwnProperty('$response')) {
-		status = err.$response.status;
-		body = JSON.parse(await err.$response.body.text());
-	} else {
-		status = err.status;
-		body = await err.json();
-	}
-
-	return {
-		code: status,
-		response: body
-	} as ErrorResponse;
-}

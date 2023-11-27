@@ -13,9 +13,13 @@
 
 [matchmaker.game_modes]
     [matchmaker.game_modes.default]
+		taggable = true
+		allow_dynamic_max_players = true
 
     [matchmaker.game_modes.custom]
         idle_lobbies = { min = 0, max = 0 }
+		taggable = true
+		allow_dynamic_max_players = true
 
         [matchmaker.game_modes.custom.actions]
             create = { enabled = true }
