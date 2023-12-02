@@ -2,6 +2,7 @@ import styles from '../styles/matchmaker.scss';
 import { LitElement, html, unsafeCSS } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
+import { when } from 'lit/directives/when.js';
 import { RivetClient, Rivet } from '@rivet-gg/api-internal';
 
 import * as ss from 'simple-statistics';
@@ -63,6 +64,9 @@ export default class MyApp extends LitElement {
 
 	@property({ type: Object })
 	stateLobbyConfig: any = null;
+
+	@property({ type: Object })
+	stateLobbyTags: any = null;
 
 	@property({ type: Array })
 	pings: number[] = [];
@@ -214,6 +218,7 @@ export default class MyApp extends LitElement {
 					break;
 				case 'state':
 					this.stateLobbyConfig = data.lobbyConfig;
+					this.stateLobbyTags = data.lobbyTags;
 
 					this.leaderboard.length = 0;
 
@@ -381,6 +386,7 @@ export default class MyApp extends LitElement {
 							<span class="data-label">X-Forwarded-For</span>
 							<span class="data-value">${this.forwardedFor || '?'}</span>
 						</div>
+						${this.renderTags()}
 						<div class="data-row">
 							<span class="data-label">PPS</span>
 							<select name="pps" id="pps" @change=${this.changePpsSelection.bind(this)}>
@@ -581,6 +587,45 @@ ${JSON.stringify(defaultTags)}</textarea
 					<span class="data-label">p99</span>
 					<span class="data-value">${ss.quantile(last5Seconds, 0.99).toFixed(1)}ms</span>
 				</div>
+			</div>
+		</div>`;
+	}
+
+	renderTags() {
+		return html`<div class="data-row ping">
+			<span class="data-label">Tags</span>
+			<div class="data-table">
+				${when(
+					this.stateLobbyTags != null,
+					() => {
+						return html`
+                            <div class="data-row">
+                                <span class="data-label"></span>
+                                <span class="data-value"></span>
+                            </div>
+                            ${repeat(
+                                Object.entries(this.stateLobbyTags),
+                                ([k]) => k,
+                                ([k, v]) => {
+                                    return html`
+                                        <div class="data-row">
+                                            <span class="data-label">${k}</span>
+                                            <span class="data-value">${v}</span>
+                                        </div>
+                                    `;
+                                }
+                            )}
+                        `;
+					},
+					() => {
+						return html`
+                            <div class="data-row">
+                                <span class="data-label"></span>
+                                <span class="data-value">null</span>
+                            </div>
+						`;
+					}
+				)}
 			</div>
 		</div>`;
 	}

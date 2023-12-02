@@ -37,11 +37,13 @@ if (process.env.RIVET_LOBBY_CONFIG) {
 // Create game state
 interface GameState {
 	lobbyConfig: any;
+    lobbyTags: any,
 	scores: { [id: number]: number };
 }
 
 const gameState: GameState = {
 	lobbyConfig: process.env.RIVET_LOBBY_CONFIG ? JSON.parse(process.env.RIVET_LOBBY_CONFIG) : null,
+    lobbyTags: process.env.RIVET_LOBBY_TAGS ? JSON.parse(process.env.RIVET_LOBBY_TAGS) : null,
 	scores: {}
 };
 
