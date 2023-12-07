@@ -1,8 +1,0 @@
-[cdn]
-    build_command = "yarn run build:prod"
-
-# [matchmaker.game_modes.default]
-#     idle_lobbies = { min = 1, max = 2 }
-
-# [matchmaker.game_modes.custom]
-#     idle_lobbies = { min = 0, max = 0 }
