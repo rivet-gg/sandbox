@@ -16,11 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       
-      - name: Set up Rivet CLI
-        run: |
-          export RIVET_CLI_VERSION="v0.3.0"
-          curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
-
       - name: Generate ns_name and version_name
         id: derive_names
         run: |
@@ -30,13 +25,6 @@ jobs:
           version_name="${short_hash} (${ns_name})"
           echo "::set-output name=ns_name::$ns_name"
           echo "::set-output name=version_name::$version_name"
-
-      - name: Create Namespace
-        env:
-          RIVET_API_ENDPOINT: "https://api.staging2.gameinc.io"
-          RIVET_TOKEN: ${{ secrets.RIVET_TOKEN }}
-        run: |
-          rivet namespace create --id "${{ steps.derive_names.outputs.ns_name }}" --name "$branch_name" --version "0.0.1" || true
 
   build_job_matchmaker:
     name: Build Docker Image (Dockerfile)
@@ -83,7 +71,7 @@ jobs:
       - name: Build CDN
         id: build_cdn
         run: |
-          output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn install && yarn run build' --path 'yarn install && yarn run build')
+          output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn install && yarn run build' --path 'dist')
           echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
 
   deploy:
@@ -101,6 +89,11 @@ jobs:
         run: |
           export RIVET_CLI_VERSION="v0.3.0"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
+
+      - name: Create Namespace
+        run: |
+          # Ignore error if namespace already exists
+          rivet namespace create --id "${{ needs.prepare.outputs.ns_name }}" --name "$branch_name" --version "0.0.1" || true
 
       - name: Deploy Version
         run: |
