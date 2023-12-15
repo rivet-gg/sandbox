@@ -25,9 +25,9 @@ jobs:
           ns_name_id=$(echo $branch_name | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g' | cut -c 1-16)
           short_hash=$(git rev-parse --short HEAD)
           version_name="${short_hash} (${branch_name})"
-          echo "::set-output name=branch_name::$branch_name"
-          echo "::set-output name=ns_name_id::$ns_name_id"
-          echo "::set-output name=version_name::$version_name"
+          echo "branch_name=$branch_name" >> "$GITHUB_OUTPUT"
+          echo "ns_name_id=$ns_name_id" >> "$GITHUB_OUTPUT"
+          echo "version_name=$version_name" >> "$GITHUB_OUTPUT"
 
   build_job_matchmaker:
     name: Build Docker Image (Dockerfile)
@@ -51,7 +51,7 @@ jobs:
         id: build_image
         run: |
           output=$(rivet image build-push --format json --name '${{ needs.prepare.outputs.ns_name_id }}' --dockerfile 'Dockerfile' | tail -n1)
-          echo "::set-output name=image_id::$(echo $output | jq -r '.image_id')"
+          echo "image_id=$(echo $output | jq -r '.image_id')" >> "$GITHUB_OUTPUT"
 
   build_cdn:
     name: Build CDN Site
@@ -75,7 +75,7 @@ jobs:
         id: build_cdn
         run: |
           output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name_id }}' --command 'yarn install && yarn run build' --path 'dist' | tail -n1)
-          echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
+          echo "site_id=$(echo $output | jq -r '.site_id')" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy
