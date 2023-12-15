@@ -83,7 +83,7 @@ jobs:
       - name: Build CDN
         id: build_cdn
         run: |
-          output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn run build' --path 'yarn run build')
+          output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn install && yarn run build' --path 'yarn install && yarn run build')
           echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
 
   deploy:
