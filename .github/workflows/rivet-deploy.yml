@@ -51,7 +51,7 @@ jobs:
         id: build_image
         run: |
           output=$(rivet image build-push --format json --name '${{ needs.prepare.outputs.ns_name_id }}' --dockerfile 'Dockerfile')
-          echo "::set-output name=image_id::$(echo $output | jq -r '.image_id')"
+          echo "::set-output name=image_id::$(echo $output | tail -n1 | jq -r '.image_id')"
 
   build_cdn:
     name: Build CDN Site
@@ -75,7 +75,7 @@ jobs:
         id: build_cdn
         run: |
           output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name_id }}' --command 'yarn install && yarn run build' --path 'dist')
-          echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
+          echo "::set-output name=site_id::$(echo $output | tail -n1 | jq -r '.site_id')"
 
   deploy:
     name: Deploy
