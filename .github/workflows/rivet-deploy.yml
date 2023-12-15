@@ -17,7 +17,7 @@ jobs:
       
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.1"
+          export RIVET_CLI_VERSION="v0.3.0"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Generate ns_name and version_name
@@ -51,7 +51,7 @@ jobs:
 
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.1"
+          export RIVET_CLI_VERSION="v0.3.0"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Build Docker Image
@@ -74,7 +74,7 @@ jobs:
 
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.1"
+          export RIVET_CLI_VERSION="v0.3.0"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Build CDN
@@ -95,7 +95,7 @@ jobs:
 
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.1"
+          export RIVET_CLI_VERSION="v0.3.0"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Deploy Version
