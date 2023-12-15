@@ -10,7 +10,7 @@ jobs:
     name: Prepare
     runs-on: ubuntu-20.04
     outputs:
-      ns_name: ${{ steps.derive_names.outputs.ns_name }}
+      ns_name_id: ${{ steps.derive_names.outputs.ns_name_id }}
       version_name: ${{ steps.derive_names.outputs.version_name }}
     steps:
       - name: Checkout
@@ -20,10 +20,11 @@ jobs:
         id: derive_names
         run: |
           branch_name=${GITHUB_REF#refs/heads/}
-          ns_name=$(echo $branch_name | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g')
+          # Max namespace length is 16 characters
+          ns_name_id=$(echo $branch_name | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g' | cut -c 1-16)
           short_hash=$(git rev-parse --short HEAD)
-          version_name="${short_hash} (${ns_name})"
-          echo "::set-output name=ns_name::$ns_name"
+          version_name="${short_hash} (${branch_name})"
+          echo "::set-output name=ns_name_id::$ns_name_id"
           echo "::set-output name=version_name::$version_name"
 
   build_job_matchmaker:
@@ -47,7 +48,7 @@ jobs:
       - name: Build Docker Image
         id: build_image
         run: |
-          output=$(rivet image build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --dockerfile 'Dockerfile')
+          output=$(rivet image build-push --format json --name '${{ needs.prepare.outputs.ns_name_id }}' --dockerfile 'Dockerfile')
           echo "::set-output name=image_id::$(echo $output | jq -r '.image_id')"
 
   build_cdn:
@@ -71,7 +72,7 @@ jobs:
       - name: Build CDN
         id: build_cdn
         run: |
-          output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn install && yarn run build' --path 'dist')
+          output=$(rivet site build-push --format json --name '${{ needs.prepare.outputs.ns_name_id }}' --command 'yarn install && yarn run build' --path 'dist')
           echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
 
   deploy:
@@ -93,9 +94,9 @@ jobs:
       - name: Create Namespace
         run: |
           # Ignore error if namespace already exists
-          rivet namespace create --id "${{ needs.prepare.outputs.ns_name }}" --name "$branch_name" || true
+          rivet namespace create --id "${{ needs.prepare.outputs.ns_name_id }}" --name "$(git rev-parse --abbrev-ref HEAD)" || true
 
       - name: Deploy Version
         run: |
-          rivet deploy --namespace '${{ needs.prepare.outputs.ns_name }}' --name '${{ needs.prepare.outputs.version_name}}' --override 'matchmaker.docker.image_id="${{ needs.build_job_matchmaker.outputs.image_id }}"' --override 'cdn.site_id="${{ needs.build_cdn.outputs.site_id }}"'
+          rivet deploy --namespace '${{ needs.prepare.outputs.ns_name_id }}' --name '${{ needs.prepare.outputs.version_name }}' --override 'matchmaker.docker.image_id="${{ needs.build_job_matchmaker.outputs.image_id }}"' --override 'cdn.site_id="${{ needs.build_cdn.outputs.site_id }}"'
 
