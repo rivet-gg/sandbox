@@ -7,6 +7,7 @@ on:
 
 jobs:
   prepare:
+    name: Prepare
     runs-on: ubuntu-20.04
     outputs:
       ns_name: ${{ steps.derive_names.outputs.ns_name }}
@@ -38,6 +39,7 @@ jobs:
           rivet namespace create --id "${{ steps.derive_names.outputs.ns_name }}" --name "$branch_name" --version "0.0.1" || true
 
   build_job_matchmaker:
+    name: Build Docker Image (Dockerfile)
     needs: prepare
     runs-on: ubuntu-20.04
     outputs:
@@ -61,6 +63,7 @@ jobs:
           echo "::set-output name=image_id::$(echo $output | jq -r '.image_id')"
 
   build_cdn:
+    name: Build CDN Site
     needs: prepare
     runs-on: ubuntu-20.04
     outputs:
@@ -84,6 +87,7 @@ jobs:
           echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
 
   deploy:
+    name: Deploy
     needs: [prepare, build_job_matchmaker, build_cdn]
     runs-on: ubuntu-20.04
     env:
