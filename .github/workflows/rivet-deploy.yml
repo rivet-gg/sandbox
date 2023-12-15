@@ -10,7 +10,7 @@ jobs:
     name: Prepare
     runs-on: ubuntu-20.04
     outputs:
-      ns_name_id: ${{ steps.derive_names.outputs.branch_name }}
+      branch_name: ${{ steps.derive_names.outputs.branch_name }}
       ns_name_id: ${{ steps.derive_names.outputs.ns_name_id }}
       version_name: ${{ steps.derive_names.outputs.version_name }}
     steps:
