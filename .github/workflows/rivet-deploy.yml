@@ -12,7 +12,7 @@ jobs:
       ns_name: ${{ steps.derive_names.outputs.ns_name }}
       version_name: ${{ steps.derive_names.outputs.version_name }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v2
       
       - name: Set up Rivet CLI
@@ -31,53 +31,68 @@ jobs:
           echo "::set-output name=version_name::$version_name"
 
       - name: Create Namespace
+        env:
+          RIVET_API_ENDPOINT: "https://api.staging2.gameinc.io"
+          RIVET_TOKEN: ${{ secrets.RIVET_TOKEN }}
         run: |
           rivet namespace create --id "${{ steps.derive_names.outputs.ns_name }}" --name "$branch_name" --version "0.0.1" || true
 
-  buid-job-matchmaker:
+  build_job_matchmaker:
     needs: prepare
     runs-on: ubuntu-20.04
+    outputs:
+      image_id: ${{ steps.build_image.outputs.image_id }}
     env:
       RIVET_API_ENDPOINT: "https://api.staging2.gameinc.io"
       RIVET_TOKEN: ${{ secrets.RIVET_TOKEN }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Set up Rivet CLI
         run: |
           export RIVET_CLI_VERSION="0.3.1"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
-      - name: Build Docker
+      - name: Build Docker Image
+        id: build_image
         run: |
           output=$(rivet image build-push --format json --name '${{ needs.prepare.outputs.ns_name }}' --dockerfile 'Dockerfile')
           echo "::set-output name=image_id::$(echo $output | jq -r '.image_id')"
-        id: build-docker
 
-  build-cdn:
+  build_cdn:
     needs: prepare
     runs-on: ubuntu-20.04
+    outputs:
+      site_id: ${{ steps.build_cdn.outputs.site_id }}
     env:
       RIVET_API_ENDPOINT: "https://api.staging2.gameinc.io"
       RIVET_TOKEN: ${{ secrets.RIVET_TOKEN }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Set up Rivet CLI
         run: |
           export RIVET_CLI_VERSION="0.3.1"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Build CDN
+        id: build_cdn
         run: |
-          output=$(rivet site build-push --format json --dockerfile Dockerfile --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn run build' --path 'dist')
+          output=$(rivet site build-push --format json --dockerfile Dockerfile --name '${{ needs.prepare.outputs.ns_name }}' --command 'yarn run build' --path 'yarn run build')
           echo "::set-output name=site_id::$(echo $output | jq -r '.site_id')"
-        id: build-cdn
 
-  deploy-version:
-    needs: [__NEEDS__]
-    needs: [build-docker, build-cdn]
+  deploy:
+    needs: [prepare, build_job_matchmaker, build_cdn]
     runs-on: ubuntu-20.04
     env:
       RIVET_API_ENDPOINT: "https://api.staging2.gameinc.io"
-      RIVET_TOKEN: ${{ secrets.RIVET_CLOUD_TOKEN }}
+      RIVET_TOKEN: ${{ secrets.RIVET_TOKEN }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Set up Rivet CLI
         run: |
           export RIVET_CLI_VERSION="0.3.1"
@@ -85,5 +100,5 @@ jobs:
 
       - name: Deploy Version
         run: |
-          rivet deploy --namespace '${{ needs.prepare.outputs.ns_name }}' --override 'matchmaker.docker.image_id="${{ needs.buid-job-matchmaker.outputs.image_id }}"' --override 'cdn.site_id="${{ needs.build-cdn.outputs.site_id }}"'
+          rivet deploy --namespace '${{ needs.prepare.outputs.ns_name }}' --name '${{ needs.prepare.outputs.version_name}}' --override 'matchmaker.docker.image_id="${{ needs.build_job_matchmaker.outputs.image_id }}"' --override 'cdn.site_id="${{ needs.build_cdn.outputs.site_id }}"'
 
