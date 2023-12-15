@@ -20,7 +20,7 @@ jobs:
         id: derive_names
         run: |
           branch_name=${GITHUB_REF#refs/heads/}
-          ns_name=$(echo $branch_name | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z-]//g')
+          ns_name=$(echo $branch_name | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g')
           short_hash=$(git rev-parse --short HEAD)
           version_name="${short_hash} (${ns_name})"
           echo "::set-output name=ns_name::$ns_name"
@@ -41,7 +41,7 @@ jobs:
 
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.0"
+          export RIVET_CLI_VERSION="v0.3.1"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Build Docker Image
@@ -65,7 +65,7 @@ jobs:
 
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.0"
+          export RIVET_CLI_VERSION="v0.3.1"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Build CDN
@@ -87,13 +87,13 @@ jobs:
 
       - name: Set up Rivet CLI
         run: |
-          export RIVET_CLI_VERSION="v0.3.0"
+          export RIVET_CLI_VERSION="v0.3.1"
           curl -fsSL https://raw.githubusercontent.com/rivet-gg/cli/main/install/unix.sh | sh
 
       - name: Create Namespace
         run: |
           # Ignore error if namespace already exists
-          rivet namespace create --id "${{ needs.prepare.outputs.ns_name }}" --name "$branch_name" --version "0.0.1" || true
+          rivet namespace create --id "${{ needs.prepare.outputs.ns_name }}" --name "$branch_name" || true
 
       - name: Deploy Version
         run: |
