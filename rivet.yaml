@@ -4,17 +4,11 @@ cdn:
 matchmaker:
   max_players: 128
   tier: basic-1d8
-  idle_lobbies:
-    min: 0
-    max: 0
   game_modes:
     default:
       taggable: true
       allow_dynamic_max_players: true
     custom:
-      idle_lobbies:
-        min: 0
-        max: 0
       taggable: true
       allow_dynamic_max_players: true
       actions:
