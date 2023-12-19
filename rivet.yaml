@@ -1,5 +1,5 @@
 cdn:
-  build_command: yarn run build
+  build_command: yarn run build:prod
   build_output: dist
 matchmaker:
   max_players: 128
@@ -7,9 +7,6 @@ matchmaker:
   idle_lobbies:
     min: 0
     max: 0
-  regions:
-    lnd-atl: {}
-    lnd-fra: {}
   game_modes:
     default:
       taggable: true

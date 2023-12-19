@@ -12,7 +12,7 @@ const RIVET_TOKEN = typeof process !== 'undefined' ? process.env.RIVET_TOKEN : u
 console.log('Rivet token', RIVET_TOKEN);
 
 const RIVET = new RivetClient({
-	token: process.env.RIVET_TOKEN,
+	token: RIVET_TOKEN,
 	environment: process.env.RIVET_API_ENDPOINT
 });
 

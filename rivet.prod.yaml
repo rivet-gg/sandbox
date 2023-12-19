@@ -1,2 +1,0 @@
-cdn:
-  build_command: yarn run build:prod
