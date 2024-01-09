@@ -24,6 +24,16 @@ retryDns(() => RIVET.matchmaker.lobbies.ready())
 		process.exit(1);
 	});
 
+// Test SIGTERM handling
+process.on('SIGTERM', () => {
+    console.log("SIGTERM signal received")
+    setTimeout(() => {
+        console.log("Exiting")
+        process.exit(0);
+    }, 1000);
+});
+
+
 // Apply lobby config
 let gameConfig = {
 	scoreIncr: 1
