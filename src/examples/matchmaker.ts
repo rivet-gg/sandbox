@@ -7,6 +7,7 @@ import { RivetClient, Rivet } from '@rivet-gg/api-internal';
 
 import * as ss from 'simple-statistics';
 import { formatCode } from '../utils';
+import { unsafeHTML } from 'lit/directives/unsafe-html';
 
 const RIVET_TOKEN = typeof process !== 'undefined' ? process.env.RIVET_TOKEN : undefined;
 console.log('Rivet token', RIVET_TOKEN);
@@ -67,6 +68,9 @@ export default class MyApp extends LitElement {
 
 	@property({ type: Object })
 	stateLobbyTags: any = null;
+
+	@property({ type: Object })
+	stats: any = {};
 
 	@property({ type: Array })
 	pings: number[] = [];
@@ -238,6 +242,9 @@ export default class MyApp extends LitElement {
 
 					this.requestUpdate('pings');
 					break;
+				case 'stats':
+					this.stats = data;
+					break;
 				default:
 					console.warn('unknown event', event);
 					break;
@@ -366,45 +373,13 @@ export default class MyApp extends LitElement {
 						</div>
 					</div>
 					<div class="data-table stats odd">
-						<div class="data-row">
-							<span class="data-label">Lobby ID</span>
-							<span class="data-value">${this.lobbyId || '--'}</span>
-						</div>
-						<div class="data-row">
-							<span class="data-label">Region</span>
-							<span class="data-value">${this.region || '--'}</span>
-						</div>
-						<div class="data-row">
-							<span class="data-label">Host</span>
-							<span class="data-value">${this.host || '--'}</span>
-						</div>
-						<div class="data-row">
-							<span class="data-label">Find duration</span>
-							<span class="data-value">${this.findDuration || '--'}</span>
-						</div>
-						<div class="data-row">
-							<span class="data-label">X-Forwarded-For</span>
-							<span class="data-value">${this.forwardedFor || '?'}</span>
-						</div>
-						${this.renderTags()}
-						<div class="data-row">
-							<span class="data-label">PPS</span>
-							<select name="pps" id="pps" @change=${this.changePpsSelection.bind(this)}>
-								<option value="0">0</option>
-								<option value="1">1</option>
-								<option value="5">5</option>
-								<option value="10">10</option>
-								<option value="20" selected>20</option>
-								<option value="60">60</option>
-								<option value="120">120</option>
-							</select>
-						</div>
-						${this.renderPing()}
+						${this.renderFindInfo()} ${this.renderTags()} ${this.renderPPS()} ${this.renderPing()}
+						${this.renderStats()}
 					</div>
 
 					<div class="info-group">
 						<h4>Custom game</h4>
-						<pre>${JSON.stringify(this.stateLobbyConfig, null, 2)}</pre>
+						${formatCode(this.stateLobbyConfig)}
 					</div>
 
 					${this.renderLeaderboard()}
@@ -507,9 +482,13 @@ export default class MyApp extends LitElement {
 				value=${defaultMaxPLayerCount}
 			/>
 			<div style="margin-top: 4px; font-weight: bold">Lobby Tags</div>
-			<textarea id="lobby-tags" name="lobby-tags" rows="10" cols="50">
-${JSON.stringify(defaultTags)}</textarea
-			>
+			<textarea
+				id="lobby-tags"
+				name="lobby-tags"
+				rows="10"
+				cols="50"
+				.value=${JSON.stringify(defaultTags)}
+			></textarea>
 		</div>`;
 	}
 
@@ -528,29 +507,79 @@ ${JSON.stringify(defaultTags)}</textarea
 			<label for="is-public">Is Public</label>
 
 			<div style="margin-top: 4px; font-weight: bold">Lobby Config</div>
-			<textarea id="custom-lobby-config" name="lobby-config" rows="10" cols="50">
-	${JSON.stringify(defaultLobbyConfig)}</textarea
-			>
+			<textarea
+				id="custom-lobby-config"
+				name="lobby-config"
+				rows="10"
+				cols="50"
+				.value=${JSON.stringify(defaultLobbyConfig)}
+			></textarea>
 		</div>`;
 	}
 
-	renderLeaderboard() {
-		if (!this.leaderboard.length) return null;
-
-		return html`<div id="leaderboard" class="info-group">
-			<h4>Leaderboard</h4>
-			<div class="data-table">
-				${repeat(
-					this.leaderboard,
-					item => item.playerId,
-					item =>
-						html`<div class="data-row">
-							<span class="data-label">${item.playerId}</span>
-							<span class="data-value">${item.score}</span>
-						</div>`
-				)}
+	renderFindInfo() {
+		return html`<div class="data-row">
+				<span class="data-label">Lobby ID</span>
+				<span class="data-value">${this.lobbyId || '--'}</span>
 			</div>
-			<button id="score-button" @click=${this.clickScoreButton.bind(this)}>Score</button>
+			<div class="data-row">
+				<span class="data-label">Region</span>
+				<span class="data-value">${this.region || '--'}</span>
+			</div>
+			<div class="data-row">
+				<span class="data-label">Host</span>
+				<span class="data-value">${this.host || '--'}</span>
+			</div>
+			<div class="data-row">
+				<span class="data-label">Find duration</span>
+				<span class="data-value">${this.findDuration || '--'}</span>
+			</div>
+			<div class="data-row">
+				<span class="data-label">X-Forwarded-For</span>
+				<span class="data-value">${this.forwardedFor || '?'}</span>
+			</div>`;
+	}
+
+	renderTags() {
+		return html`<div class="data-row ping">
+			<span class="data-label">Tags</span>
+			<div class="data-table">
+				<div class="data-row">
+					<span class="data-label"></span>
+					<span class="data-value">&nbsp;</span>
+				</div>
+				${when(this.stateLobbyTags != null, () => {
+					return html`
+						${repeat(
+							Object.entries(this.stateLobbyTags),
+							([k]) => k,
+							([k, v]) => {
+								return html`
+									<div class="data-row">
+										<span class="data-label">${k}</span>
+										<span class="data-value">${v}</span>
+									</div>
+								`;
+							}
+						)}
+					`;
+				})}
+			</div>
+		</div>`;
+	}
+
+	renderPPS() {
+		return html`<div class="data-row">
+			<span class="data-label">PPS</span>
+			<select name="pps" id="pps" @change=${this.changePpsSelection.bind(this)}>
+				<option value="0">0</option>
+				<option value="1">1</option>
+				<option value="5">5</option>
+				<option value="10">10</option>
+				<option value="20" selected>20</option>
+				<option value="60">60</option>
+				<option value="120">120</option>
+			</select>
 		</div>`;
 	}
 
@@ -591,42 +620,68 @@ ${JSON.stringify(defaultTags)}</textarea
 		</div>`;
 	}
 
-	renderTags() {
-		return html`<div class="data-row ping">
-			<span class="data-label">Tags</span>
+	renderStats() {
+		return html`<div class="data-row stats">
+			<span class="data-label">Stats</span>
 			<div class="data-table">
-				${when(
-					this.stateLobbyTags != null,
-					() => {
-						return html`
-                            <div class="data-row">
-                                <span class="data-label"></span>
-                                <span class="data-value"></span>
-                            </div>
-                            ${repeat(
-                                Object.entries(this.stateLobbyTags),
-                                ([k]) => k,
-                                ([k, v]) => {
-                                    return html`
-                                        <div class="data-row">
-                                            <span class="data-label">${k}</span>
-                                            <span class="data-value">${v}</span>
-                                        </div>
-                                    `;
-                                }
-                            )}
-                        `;
-					},
-					() => {
-						return html`
-                            <div class="data-row">
-                                <span class="data-label"></span>
-                                <span class="data-value">null</span>
-                            </div>
-						`;
-					}
+				<div class="data-row">
+					<span class="data-label"></span>
+					<span class="data-value">&nbsp;</span>
+				</div>
+				<div class="data-row memory">
+					<span class="data-label">Memory</span>
+					<div class="data-table">
+						<div class="data-row">
+							<span class="data-label"></span>
+							<span class="data-value">&nbsp;</span>
+						</div>
+						${when(
+							this.stats.memory != undefined,
+							() =>
+								html`<div class="data-row">
+										<span class="data-label">rss</span>
+										<span class="data-value">${this.stats.memory.rss}</span>
+									</div>
+									<div class="data-row">
+										<span class="data-label">heapTotal</span>
+										<span class="data-value">${this.stats.memory.heapTotal}</span>
+									</div>
+									<div class="data-row">
+										<span class="data-label">heapUsed</span>
+										<span class="data-value">${this.stats.memory.heapUsed}</span>
+									</div>
+									<div class="data-row">
+										<span class="data-label">external</span>
+										<span class="data-value">${this.stats.memory.external}</span>
+									</div>
+									<div class="data-row">
+										<span class="data-label">arrayBuffers</span>
+										<span class="data-value">${this.stats.memory.arrayBuffers}</span>
+									</div>`
+						)}
+					</div>
+				</div>
+			</div>
+		</div>`;
+	}
+
+	renderLeaderboard() {
+		if (!this.leaderboard.length) return null;
+
+		return html`<div id="leaderboard" class="info-group">
+			<h4>Leaderboard</h4>
+			<div class="data-table">
+				${repeat(
+					this.leaderboard,
+					item => item.playerId,
+					item =>
+						html`<div class="data-row">
+							<span class="data-label">${item.playerId}</span>
+							<span class="data-value">${item.score}</span>
+						</div>`
 				)}
 			</div>
+			<button id="score-button" @click=${this.clickScoreButton.bind(this)}>Score</button>
 		</div>`;
 	}
 }

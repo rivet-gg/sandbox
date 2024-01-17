@@ -26,13 +26,12 @@ retryDns(() => RIVET.matchmaker.lobbies.ready())
 
 // Test SIGTERM handling
 process.on('SIGTERM', () => {
-    console.log("SIGTERM signal received")
-    setTimeout(() => {
-        console.log("Exiting")
-        process.exit(0);
-    }, 1000);
+	console.log('SIGTERM signal received');
+	setTimeout(() => {
+		console.log('Exiting');
+		process.exit(0);
+	}, 1000);
 });
-
 
 // Apply lobby config
 let gameConfig = {
@@ -47,13 +46,13 @@ if (process.env.RIVET_LOBBY_CONFIG) {
 // Create game state
 interface GameState {
 	lobbyConfig: any;
-    lobbyTags: any,
+	lobbyTags: any;
 	scores: { [id: number]: number };
 }
 
 const gameState: GameState = {
 	lobbyConfig: process.env.RIVET_LOBBY_CONFIG ? JSON.parse(process.env.RIVET_LOBBY_CONFIG) : null,
-    lobbyTags: process.env.RIVET_LOBBY_TAGS ? JSON.parse(process.env.RIVET_LOBBY_TAGS) : null,
+	lobbyTags: process.env.RIVET_LOBBY_TAGS ? JSON.parse(process.env.RIVET_LOBBY_TAGS) : null,
 	scores: {}
 };
 
@@ -121,7 +120,7 @@ wss.on('connection', async (ws, req) => {
 	broadcast('state', gameState);
 
 	ws.on('message', (rawData: string) => {
-		let [event, data] = JSON.parse(rawData);
+		let [event, data] = JSON.parse(rawData.slice(0, 2 ** 13));
 		switch (event) {
 			case 'ping':
 				ws.send(JSON.stringify(['pong', data]));
@@ -163,6 +162,10 @@ wss.on('connection', async (ws, req) => {
 	});
 });
 
+setInterval(() => {
+	broadcastStats();
+}, 1000);
+
 async function handleKvPutProxy(ws: WebSocket, key: string, data: any) {
 	let res;
 	try {
@@ -197,6 +200,12 @@ async function handleKvDeleteProxy(ws: WebSocket, key: string) {
 	}
 
 	ws.send(JSON.stringify(['demo:kv:delete', res]));
+}
+
+function broadcastStats() {
+	broadcast('stats', {
+		memory: process.memoryUsage()
+	});
 }
 
 // TODO: Figure out the DNS issue

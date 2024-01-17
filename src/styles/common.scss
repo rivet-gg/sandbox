@@ -151,10 +151,6 @@ code {
 		padding: 3px 7px;
 	}
 
-	& > span {
-		font-family: inherit;
-	}
-
 	/* === HIGHLIGHT.JS FORMATTING === */
 	&.theme1 {
 		background-color: rgba(255, 255, 255, 0.09);
@@ -172,6 +168,10 @@ code {
 		& > .hljs-keyword {
 			color: #ffcc66;
 		}
+	}
+
+	span {
+		font-family: inherit;
 	}
 }
 
