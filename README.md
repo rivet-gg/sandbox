@@ -1,5 +1,7 @@
 # Rivet Sandbox
 
+# ❗️ This project has been moved to [Rivet's example repo](https://github.com/rivet-gg/examples).
+
 [Visit the Rivet Sandbox](https://sandbox.rivet.game)
 
 This repo is a Rivet game built to provide examples of interacting with Rivet APIs.
